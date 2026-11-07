@@ -3,6 +3,8 @@ import Foundation
 import SwiftData
 @testable import SwiftPulse
 
+// Nested so it never runs alongside the other suites that swap shared test hooks.
+extension SharedStateTests {
 @MainActor @Suite(.serialized)
 struct SSHConfigImportTests {
     @Test func aliasesSkipPatternsAndFollowIncludes() throws {
@@ -75,4 +77,5 @@ struct SSHConfigImportTests {
         #expect(app.sshKey?.id == keys[0].id && bastion.sshKey?.id == keys[0].id)
         #expect(KeychainService.get(keys[0].privateKeyKey) == pair.privateKey)
     }
+}
 }

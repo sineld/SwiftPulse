@@ -4,6 +4,8 @@ import SwiftData
 @testable import SwiftPulse
 
 /// Serialized: the tests point the shared secret store at their own temporary file.
+// Nested so it never runs alongside the other suites that swap shared test hooks.
+extension SharedStateTests {
 @MainActor @Suite(.serialized)
 struct AgentTests {
     static let secrets = ["S3cret-identity-pass", "S3cret-machine-pass", "S3cret-proxy-pass", "S3cret-passphrase",
@@ -371,4 +373,5 @@ struct AgentTests {
         let (long, cutLong) = AgentRunner.tail(Data("0123456789abc".utf8), cap: 4)
         #expect(long == "9abc" && cutLong)
     }
+}
 }

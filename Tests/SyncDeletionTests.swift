@@ -4,6 +4,8 @@ import SwiftData
 @testable import SwiftPulse
 
 /// Deletions and agent activity travelling between two Macs, each with its own store and preferences.
+// Nested so it never runs alongside the other suites that swap shared test hooks.
+extension SharedStateTests {
 @MainActor @Suite(.serialized)
 struct SyncDeletionTests {
     private func withScratch(_ body: () throws -> Void) rethrows {
@@ -121,4 +123,5 @@ struct SyncDeletionTests {
             #expect(try b.fetchCount(FetchDescriptor<AgentActivity>()) == 0)
         }
     }
+}
 }

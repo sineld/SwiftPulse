@@ -3,6 +3,8 @@ import Foundation
 import SwiftData
 @testable import SwiftPulse
 
+// Nested so it never runs alongside the other suites that swap shared test hooks.
+extension SharedStateTests {
 @MainActor
 struct ConnectionSpecTests {
     private func makeContext() -> ModelContext { ModelContext(AppSchema.container(inMemory: true)) }
@@ -75,4 +77,5 @@ struct ConnectionSpecTests {
         #expect(spec.jumpHosts.map(\.host) == ["bastion.example"])
         #expect(spec.jumpHosts[0].password == "pw")
     }
+}
 }

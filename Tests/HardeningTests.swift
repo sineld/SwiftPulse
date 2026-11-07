@@ -3,6 +3,8 @@ import Foundation
 import CryptoKit
 @testable import SwiftPulse
 
+// Nested so it never runs alongside the other suites that swap shared test hooks.
+extension SharedStateTests {
 struct HardeningTests {
     @Test func changedHostKeysAlwaysAsk() {
         typealias D = HostKeyStore.Decision
@@ -59,4 +61,5 @@ struct HardeningTests {
         let mode = try FileManager.default.attributesOfItem(atPath: url.path)[.posixPermissions] as? Int
         #expect(mode == 0o600)
     }
+}
 }

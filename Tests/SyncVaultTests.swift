@@ -95,6 +95,8 @@ private final class Scratch {
     }
 }
 
+// Nested so it never runs alongside the other suites that swap shared test hooks.
+extension SharedStateTests {
 @MainActor
 struct SyncVaultTests {
 
@@ -275,4 +277,5 @@ struct SyncVaultTests {
         }
         #expect(throws: (any Error).self) { _ = try SyncVault.envelope(from: Data("not json".utf8)) }
     }
+}
 }
