@@ -111,7 +111,7 @@ struct SyncDeletionTests {
             #expect(try b.fetch(FetchDescriptor<AgentActivity>()).first?.detail == "uptime")
 
             entry.outcome = "exit 1 on 1"
-            entry.updated = Date().addingTimeInterval(5)
+            entry.lastUpdated = Date().addingTimeInterval(5)
             try a.save()
             try SyncVault.apply(try SyncVault.build(from: a), to: b, strategy: .merge)
             #expect(try b.fetch(FetchDescriptor<AgentActivity>()).map(\.outcome) == ["exit 1 on 1"])

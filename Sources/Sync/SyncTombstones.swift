@@ -82,11 +82,11 @@ extension SyncVault {
     @MainActor
     static func activity(in context: ModelContext, now: Date = Date()) throws -> [ActivityDTO] {
         let cutoff = now.addingTimeInterval(-activityAge)
-        var recent = FetchDescriptor<AgentActivity>(predicate: #Predicate { $0.updated > cutoff },
-                                                    sortBy: [SortDescriptor(\.updated, order: .reverse)])
+        var recent = FetchDescriptor<AgentActivity>(predicate: #Predicate { $0.lastUpdated > cutoff },
+                                                    sortBy: [SortDescriptor(\.lastUpdated, order: .reverse)])
         recent.fetchLimit = activityLimit
         return try context.fetch(recent).sorted { $0.id.uuidString < $1.id.uuidString }.map {
-            ActivityDTO(id: $0.id, date: $0.date, updated: $0.updated, device: $0.device, client: $0.client, tool: $0.tool,
+            ActivityDTO(id: $0.id, date: $0.date, updated: $0.lastUpdated, device: $0.device, client: $0.client, tool: $0.tool,
                         hostIDs: $0.hostIDs, hostNames: $0.hostNames, summary: $0.summary, detail: $0.detail,
                         outcome: $0.outcome, results: $0.results, task: $0.task, steps: $0.steps)
         }
@@ -99,14 +99,14 @@ extension SyncVault {
         for dto in incoming where dto.updated > cleared {
             let model: AgentActivity
             if let existing = local[dto.id] {
-                guard dto.updated > existing.updated else { continue }
+                guard dto.updated > existing.lastUpdated else { continue }
                 model = existing
             } else {
                 model = AgentActivity(client: dto.client, tool: dto.tool, hostIDs: [], hostNames: [], summary: "", detail: "", outcome: "")
                 model.id = dto.id
                 context.insert(model)
             }
-            model.date = dto.date; model.updated = dto.updated; model.device = dto.device; model.client = dto.client
+            model.date = dto.date; model.lastUpdated = dto.updated; model.device = dto.device; model.client = dto.client
             model.tool = dto.tool; model.hostIDs = dto.hostIDs; model.hostNames = dto.hostNames; model.summary = dto.summary
             model.detail = dto.detail; model.outcome = dto.outcome; model.results = dto.results; model.task = dto.task
             model.steps = dto.steps

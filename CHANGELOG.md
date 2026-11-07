@@ -29,4 +29,5 @@ First public release.
 - An old `secrets.json` left in the former sandbox container is no longer copied back on every launch, which could overwrite newer secrets in the keychain.
 - When an agent disconnects, its request waiting for approval is closed and denied, so nothing can be approved for a client that is gone.
 - The Docker panel no longer hangs on machines where the SSH user isn't in the `docker` group: `sg docker` asked for the group password and waited forever, so passwordless `sudo -n docker` was never tried. `sg docker` now runs only for members of the group, and Docker commands get no input, so a password prompt fails instead of waiting.
+- Agent activity dates are kept on macOS 15 and 26. The attribute was named `updated`, which SwiftData on those systems confuses with Core Data's own `isUpdated` flag, so it always read back as 2001 and activity didn't sort, group or sync. It is now `lastUpdated`; existing stores migrate automatically.
 - Tests never touch the user's data: no real keychain, `secrets.json`, database, sync vault or MCP socket, and no leftover files in `~/Library/Preferences`.

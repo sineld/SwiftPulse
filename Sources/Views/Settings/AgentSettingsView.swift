@@ -134,7 +134,7 @@ private struct ConnectedClients: View {
 /// What agents did, newest first, for every machine or one.
 struct AgentActivityView: View {
     @Environment(\.modelContext) private var context
-    @Query(sort: \AgentActivity.updated, order: .reverse) private var entries: [AgentActivity]
+    @Query(sort: \AgentActivity.lastUpdated, order: .reverse) private var entries: [AgentActivity]
     @Query(sort: \Machine.name) private var machines: [Machine]
     @State private var machineID: String
     @State private var pendingDelete: DeleteRequest?
@@ -171,7 +171,7 @@ struct AgentActivityView: View {
                         Text(entry.summary).font(.body.weight(.medium))
                         Text("\(entry.client) · \(entry.hostNames.joined(separator: ", ")) · \(entry.outcome)")
                             .font(.caption).foregroundStyle(entry.outcome == "declined" ? .orange : .secondary)
-                        Text(entry.updated.formatted(date: .abbreviated, time: .shortened) + " · " + entry.device)
+                        Text(entry.lastUpdated.formatted(date: .abbreviated, time: .shortened) + " · " + entry.device)
                             .font(.caption2).foregroundStyle(.tertiary)
                     }
                 }

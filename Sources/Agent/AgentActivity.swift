@@ -26,8 +26,9 @@ final class AgentActivity {
 
     var id: UUID = UUID()
     var date: Date = Date()
-    /// When the last step was added.
-    var updated: Date = Date()
+    /// When the last step was added. Not named `updated`: before macOS 27 SwiftData runs on Core Data, where that
+    /// name is NSManagedObject's own `isUpdated` flag, so the date never reached the store and always read back as 2001.
+    @Attribute(originalName: "updated") var lastUpdated: Date = Date()
     /// The Mac it happened on.
     var device: String = ""
     /// The MCP client ("claude-code", "codex"…).
@@ -78,7 +79,7 @@ enum AgentActivityLog {
                 existing.hostNames.append(name)
             }
             existing.outcome = entry.outcome
-            existing.updated = Date()
+            existing.lastUpdated = Date()
         } else {
             if let task {
                 entry.task = task
@@ -94,8 +95,8 @@ enum AgentActivityLog {
     /// The newest entry for this task and client that is still open.
     private static func openEntry(task: String, client: String, in context: ModelContext) -> AgentActivity? {
         let cutoff = Date().addingTimeInterval(-taskGap)
-        var descriptor = FetchDescriptor<AgentActivity>(predicate: #Predicate { $0.client == client && $0.updated > cutoff },
-                                                        sortBy: [SortDescriptor(\.updated, order: .reverse)])
+        var descriptor = FetchDescriptor<AgentActivity>(predicate: #Predicate { $0.client == client && $0.lastUpdated > cutoff },
+                                                        sortBy: [SortDescriptor(\.lastUpdated, order: .reverse)])
         descriptor.fetchLimit = 20
         let recent = (try? context.fetch(descriptor)) ?? []
         return recent.first { $0.task?.caseInsensitiveCompare(task) == .orderedSame }
@@ -104,14 +105,14 @@ enum AgentActivityLog {
     private static func trim(in context: ModelContext) {
         let count = (try? context.fetchCount(FetchDescriptor<AgentActivity>())) ?? 0
         guard count > limit else { return }
-        var oldest = FetchDescriptor<AgentActivity>(sortBy: [SortDescriptor(\.updated)])
+        var oldest = FetchDescriptor<AgentActivity>(sortBy: [SortDescriptor(\.lastUpdated)])
         oldest.fetchLimit = count - limit
         ((try? context.fetch(oldest)) ?? []).forEach(context.delete)
     }
 
     /// Newest first; for one machine when `hostID` is given.
     static func entries(hostID: String?, limit: Int, in context: ModelContext) -> [AgentActivity] {
-        let all = (try? context.fetch(FetchDescriptor<AgentActivity>(sortBy: [SortDescriptor(\.updated, order: .reverse)]))) ?? []
+        let all = (try? context.fetch(FetchDescriptor<AgentActivity>(sortBy: [SortDescriptor(\.lastUpdated, order: .reverse)]))) ?? []
         let filtered = hostID.map { id in all.filter { $0.hostIDs.contains(id) } } ?? all
         return Array(filtered.prefix(max(limit, 1)))
     }
@@ -142,7 +143,7 @@ struct AgentActivityRecord: Codable, Sendable {
     init(_ entry: AgentActivity) {
         id = entry.id.uuidString
         date = entry.date
-        updated = entry.updated
+        updated = entry.lastUpdated
         device = entry.device
         client = entry.client
         tool = entry.tool
