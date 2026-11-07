@@ -1,0 +1,109 @@
+name: SwiftPulse
+options:
+  bundleIdPrefix: app.swiftpulse
+  deploymentTarget:
+    macOS: "15.0"
+  createIntermediateGroups: true
+  generateEmptyDirectories: true
+packages:
+  BigInt:
+    url: https://github.com/attaswift/BigInt.git
+    from: 5.3.0
+  Citadel:
+    url: https://github.com/orlandos-nl/Citadel.git
+    from: 0.12.0
+  SwiftTerm:
+    url: https://github.com/migueldeicaza/SwiftTerm.git
+    from: 1.20.0
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    MACOSX_DEPLOYMENT_TARGET: "15.0"
+    CODE_SIGN_STYLE: Automatic
+    ENABLE_HARDENED_RUNTIME: YES
+    SWIFT_STRICT_CONCURRENCY: minimal
+targets:
+  SwiftPulse:
+    type: application
+    platform: macOS
+    sources:
+      - path: Sources
+      - path: Resources
+        excludes: [swiftpulse-mcp]
+      # The MCP stdio relay has no extension, so XcodeGen would leave it out of the bundle.
+      - path: Resources/swiftpulse-mcp
+        buildPhase: resources
+      # The Claude Code skill Settings › MCP Server installs, kept as a folder.
+      - path: skills
+        type: folder
+        buildPhase: resources
+    dependencies:
+      - package: BigInt
+      - package: Citadel
+      - package: SwiftTerm
+    postBuildScripts:
+      # The packages' MIT and Apache licenses must travel with the binary: copy each LICENSE/NOTICE file into
+      # Contents/Resources/Licenses. Runs before code signing.
+      - name: Copy package licenses
+        basedOnDependencyAnalysis: false
+        script: |
+          dest="$TARGET_BUILD_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH/Licenses"
+          rm -rf "$dest" && mkdir -p "$dest"
+          for package in "$BUILD_DIR"/../../SourcePackages/checkouts/*/; do
+            for file in "$package"LICENSE* "$package"NOTICE*; do
+              if [ -f "$file" ]; then cp "$file" "$dest/$(basename "$package")-$(basename "$file")"; fi
+            done
+          done
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: app.swiftpulse.macos
+        PRODUCT_NAME: SwiftPulse
+        MARKETING_VERSION: "1.1"
+        CURRENT_PROJECT_VERSION: "1"
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+      configs:
+        Debug:
+          ENABLE_TESTABILITY: YES
+    info:
+      path: Resources/Info.plist
+      properties:
+        CFBundleDisplayName: SwiftPulse
+        CFBundleShortVersionString: "1.1"
+        CFBundleVersion: "1"
+        LSMinimumSystemVersion: "15.0"
+        NSHumanReadableCopyright: "© 2026 Sinan Eldem"
+        LSApplicationCategoryType: public.app-category.developer-tools
+        NSAppTransportSecurity:
+          NSAllowsArbitraryLoads: false
+    entitlements:
+      path: Resources/SwiftPulse.entitlements
+      properties:
+        # Deliberately not sandboxed: this is a personal build, and the sync folder can be anywhere
+        # (a Nextcloud/Dropbox directory), which a sandboxed app cannot reach without bookmarks.
+        com.apple.security.network.client: true
+        com.apple.security.network.server: true
+  SwiftPulseTests:
+    type: bundle.unit-test
+    platform: macOS
+    sources:
+      - path: Tests
+    dependencies:
+      - target: SwiftPulse
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: app.swiftpulse.macos.tests
+        GENERATE_INFOPLIST_FILE: YES
+        SWIFT_VERSION: "5.0"
+schemes:
+  SwiftPulse:
+    build:
+      targets:
+        SwiftPulse: all
+        SwiftPulseTests: [test]
+    run:
+      config: Debug
+    test:
+      config: Debug
+      targets:
+        - SwiftPulseTests

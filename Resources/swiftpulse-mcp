@@ -1,0 +1,30 @@
+#!/bin/bash
+#
+# swiftpulse-mcp: the command an MCP client runs to talk to SwiftPulse over stdio. It pipes stdin and stdout to
+# the app's private Unix socket and starts SwiftPulse in the background first if the server isn't up yet.
+#
+#   claude mcp add swiftpulse -- /Applications/SwiftPulse.app/Contents/Resources/swiftpulse-mcp
+
+set -u
+
+socket_path="${SWIFTPULSE_SOCKET:-$HOME/Library/Application Support/SwiftPulse/agent.sock}"
+# This script lives in SwiftPulse.app/Contents/Resources.
+app_bundle="$(cd "$(dirname "$0")/../.." && pwd)"
+
+server_is_up() {
+    /usr/bin/nc -U "$socket_path" </dev/null >/dev/null 2>&1
+}
+
+if ! server_is_up; then
+    /usr/bin/open -g "$app_bundle" 2>/dev/null || /usr/bin/open -g -b app.swiftpulse.macos 2>/dev/null
+    give_up_at=$((SECONDS + 15))
+    until server_is_up; do
+        if [ "$SECONDS" -ge "$give_up_at" ]; then
+            echo "SwiftPulse's MCP server is not running. Open SwiftPulse and turn on Settings › MCP Server." >&2
+            exit 1
+        fi
+        sleep 0.25
+    done
+fi
+
+exec /usr/bin/nc -U "$socket_path"

@@ -1,0 +1,23 @@
+name: test
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: macos-26
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install XcodeGen
+        run: brew install xcodegen
+      - name: Install the Metal toolchain (SwiftTerm needs it)
+        run: xcodebuild -downloadComponent MetalToolchain
+      - name: Generate the Xcode project
+        run: xcodegen generate
+      - name: Build and test
+        run: |
+          xcodebuild test -project SwiftPulse.xcodeproj -scheme SwiftPulse -destination 'platform=macOS' \
+            -derivedDataPath .build/DerivedData CODE_SIGN_IDENTITY="-" \
+            -skipPackagePluginValidation -skipMacroValidation
